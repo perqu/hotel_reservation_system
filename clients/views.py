@@ -3,8 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Client
 from .serializers import ClientSerializer
+from utils.permissions import HasGroupPermission
 
 class ClientListView(APIView):
+    permission_classes = [HasGroupPermission]
+    required_groups = ['IT']
+
     def get(self, request):
         clients = Client.objects.all()
         serializer = ClientSerializer(clients, many=True)
@@ -18,6 +22,9 @@ class ClientListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ClientDetailView(APIView):
+    permission_classes = [HasGroupPermission]
+    required_groups = ['IT']
+
     def get_object(self, uuid):
         try:
             return Client.objects.get(uuid=uuid)

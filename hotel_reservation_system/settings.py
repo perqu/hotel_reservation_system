@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "clients",
     "employees",
+    "rooms",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
@@ -39,6 +41,15 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hotel_reservation_system.urls"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 TEMPLATES = [
     {
