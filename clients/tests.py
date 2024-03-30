@@ -49,7 +49,6 @@ class ClientDetailViewTests(APITestCase):
         response = self.client.post(reverse('login'), data, format='json')
         self.token = response.data.get('token', '')
 
-        # Creating a client for testing
         self.client_obj = Client.objects.create(name='Test Client', email='testclient@example.com')
         self.url = reverse('client-detail', args=[self.client_obj.uuid])
 
