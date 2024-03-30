@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "clients",
     "employees",
     "rooms",
+    "reservations",
     "rest_framework.authtoken",
 ]
 

@@ -194,16 +194,13 @@ class RoomListViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_room_authenticated(self):
-        # Tworzenie nowego standardu pokoju
         data_standard = {'name': 'New Room Standard', 'price_per_night': '200.00'}
         headers = {'Authorization': f'Token {self.token}'}
         response_standard = self.client.post(reverse('room-standard-list'), data_standard, headers=headers, format='json')
         self.assertEqual(response_standard.status_code, status.HTTP_201_CREATED)
 
-        # Pobranie identyfikatora nowego standardu pokoju
         new_room_standard_id = response_standard.data.get('uuid')
 
-        # Tworzenie pokoju z nowym standardem pokoju
         data_room = {'room_number': '102', 'location': 'Poland', 'room_standard': new_room_standard_id}
         response_room = self.client.post(self.url, data_room, headers=headers, format='json')
         self.assertEqual(response_room.status_code, status.HTTP_201_CREATED)
