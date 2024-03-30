@@ -38,10 +38,10 @@ class ClientDetailView(APIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, uuid):
+    def patch(self, request, uuid):
         client = self.get_object(uuid)
         if client:
-            serializer = ClientSerializer(client, data=request.data)
+            serializer = ClientSerializer(client, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

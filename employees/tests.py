@@ -1,53 +1,98 @@
-from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import Employee
-from .serializers import EmployeeSerializer
+from rest_framework import status
+from employees.models import Employee
+from django.contrib.auth.models import Group
+from django.urls import reverse
+
+class EmployeeLoginTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('login')
+
+        self.employee = Employee.objects.create_user(username='test_employee', password='test_password')
+
+    def test_login_with_valid_credentials(self):
+        data = {'username': 'test_employee', 'password': 'test_password'}
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in response.data)
+
+    def test_login_with_invalid_credentials(self):
+        data = {'username': 'invalid_employee', 'password': 'invalid_password'}
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue('error' in response.data)
 
 class EmployeeListViewTests(APITestCase):
     def setUp(self):
-        self.employee1 = Employee.objects.create(username='testuser1', position='Tester', department='Testing')
-        self.employee2 = Employee.objects.create(username='testuser2', position='Developer', department='Development')
+        self.url_list = reverse('employee-list')
 
-    def test_get_employee_list(self):
-        url = reverse('employee-list')
-        response = self.client.get(url)
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
+        group = Group.objects.create(name='IT')
+
+        self.employee = Employee.objects.create_user(username='test_employee', password='test_password')
+        self.employee.groups.add(group)
+
+        data = {'username': 'test_employee', 'password': 'test_password'}
+        response = self.client.post(reverse('login'), data, format='json')
+        self.token = response.data.get('token', '')
+
+    def test_list_employees_authenticated(self):
+        headers = {'Authorization': f'Token {self.token}'}
+        response = self.client.get(self.url_list, headers=headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
 
-    def test_create_employee(self):
-        url = reverse('employee-list')
-        data = {'username': 'newuser', 'position': 'New Position', 'department': 'New Department'}
-        response = self.client.post(url, data, format='json')
+    def test_list_employees_unauthenticated(self):
+        response = self.client.get(self.url_list)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_employee_authenticated(self):
+        data = {'username': 'new_employee', 'password': 'new_password', 'position': 'Developer', 'department': 'Engineering', 'hire_date': '2023-01-15'}
+        headers = {'Authorization': f'Token {self.token}'}
+        response = self.client.post(self.url_list, data, headers=headers, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Employee.objects.count(), 3)
+
+    def test_create_employee_unauthenticated(self):
+        data = {'username': 'new_employee', 'password': 'new_password'}
+        response = self.client.post(self.url_list, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class EmployeeDetailViewTests(APITestCase):
     def setUp(self):
-        self.employee = Employee.objects.create(username='testuser', position='Tester', department='Testing')
+        group = Group.objects.create(name='IT')
 
-    def test_get_employee_detail(self):
-        url = reverse('employee-detail', kwargs={'uuid': str(self.employee.uuid)})
-        response = self.client.get(url)
-        employee = Employee.objects.get(uuid=self.employee.uuid)
-        serializer = EmployeeSerializer(employee)
+        self.employee = Employee.objects.create_user(username='test_employee', password='test_password')
+        self.employee.groups.add(group)
+
+        data = {'username': 'test_employee', 'password': 'test_password'}
+        response = self.client.post(reverse('login'), data, format='json')
+        self.token = response.data.get('token', '')
+
+        self.url = reverse('employee-detail', args=[self.employee.uuid])
+
+    def test_retrieve_employee_authenticated(self):
+        headers = {'Authorization': f'Token {self.token}'}
+        response = self.client.get(self.url, headers=headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
 
-    def test_update_employee(self):
-        url = reverse('employee-detail', kwargs={'uuid': str(self.employee.uuid)})
-        data = {'username': 'updateduser', 'position': 'Updated Position', 'department': 'Updated Department'}
-        response = self.client.put(url, data, format='json')
+    def test_retrieve_employee_unauthenticated(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_employee_authenticated(self):
+        data = {'username': 'new_employee', 'department': 'Engineering'}
+        headers = {'Authorization': f'Token {self.token}'}
+        response = self.client.patch(self.url, data, headers=headers, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        updated_employee = Employee.objects.get(uuid=self.employee.uuid)
-        self.assertEqual(updated_employee.username, 'updateduser')
-        self.assertEqual(updated_employee.position, 'Updated Position')
-        self.assertEqual(updated_employee.department, 'Updated Department')
 
-    def test_delete_employee(self):
-        url = reverse('employee-detail', kwargs={'uuid': str(self.employee.uuid)})
-        response = self.client.delete(url)
+    def test_update_employee_unauthenticated(self):
+        data = {'username': 'updated_employee'}
+        response = self.client.put(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_employee_authenticated(self):
+        headers = {'Authorization': f'Token {self.token}'}
+        response = self.client.delete(self.url, headers=headers)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Employee.objects.filter(uuid=self.employee.uuid).exists())
+
+    def test_delete_employee_unauthenticated(self):
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -103,6 +103,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+SILENCED_SYSTEM_CHECKS = ['urls.W002']
+
 AUTH_USER_MODEL  = "employees.Employee"
 
 # Internationalization

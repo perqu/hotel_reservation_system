@@ -7,15 +7,11 @@ class AmenitySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RoomStandardSerializer(serializers.ModelSerializer):
-    amenities = AmenitySerializer(many=True, read_only=True)
-
     class Meta:
         model = RoomStandard
         fields = '__all__'
 
 class RoomSerializer(serializers.ModelSerializer):
-    room_standard = RoomStandardSerializer()
-
     class Meta:
         model = Room
         fields = '__all__'

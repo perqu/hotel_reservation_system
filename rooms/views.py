@@ -38,10 +38,10 @@ class AmenityDetailView(APIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, uuid):
+    def patch(self, request, uuid):
         amenity = self.get_object(uuid)
         if amenity:
-            serializer = AmenitySerializer(amenity, data=request.data)
+            serializer = AmenitySerializer(amenity, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -88,10 +88,10 @@ class RoomStandardDetailView(APIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, uuid):
+    def patch(self, request, uuid):
         room_standard = self.get_object(uuid)
         if room_standard:
-            serializer = RoomStandardSerializer(room_standard, data=request.data)
+            serializer = RoomStandardSerializer(room_standard, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -138,10 +138,10 @@ class RoomDetailView(APIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, uuid):
+    def patch(self, request, uuid):
         room = self.get_object(uuid)
         if room:
-            serializer = RoomSerializer(room, data=request.data)
+            serializer = RoomSerializer(room, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

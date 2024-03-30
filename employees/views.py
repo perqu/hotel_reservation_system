@@ -6,8 +6,11 @@ from .serializers import EmployeeSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from utils.permissions import HasGroupPermission
+from rest_framework.permissions import AllowAny
 
 class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -52,10 +55,10 @@ class EmployeeDetailView(APIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, uuid):
+    def patch(self, request, uuid):
         employee = self.get_object(uuid)
         if employee:
-            serializer = EmployeeSerializer(employee, data=request.data)
+            serializer = EmployeeSerializer(employee, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
