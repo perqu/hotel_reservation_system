@@ -4,26 +4,27 @@ from rest_framework import status
 from .models import Client
 from .serializers import ClientSerializer
 from utils.permissions import HasGroupPermission
-from rest_framework.permissions import AllowAny
 
-    
+
 class ClientListView(APIView):
+    serializer_class = ClientSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         clients = Client.objects.all()
-        serializer = ClientSerializer(clients, many=True)
+        serializer = self.serializer_class(clients, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ClientSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ClientDetailView(APIView):
+    serializer_class = ClientSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
@@ -36,14 +37,14 @@ class ClientDetailView(APIView):
     def get(self, request, uuid):
         client = self.get_object(uuid)
         if client:
-            serializer = ClientSerializer(client)
+            serializer = self.serializer_class(client)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         client = self.get_object(uuid)
         if client:
-            serializer = ClientSerializer(client, data=request.data, partial=True)
+            serializer = self.serializer_class(client, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

@@ -6,22 +6,24 @@ from .serializers import AmenitySerializer, RoomStandardSerializer, RoomSerializ
 from utils.permissions import HasGroupPermission
 
 class AmenityListView(APIView):
+    serializer_class = AmenitySerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         amenities = Amenity.objects.all()
-        serializer = AmenitySerializer(amenities, many=True)
+        serializer = self.serializer_class(amenities, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = AmenitySerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AmenityDetailView(APIView):
+    serializer_class = AmenitySerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
     
@@ -34,14 +36,14 @@ class AmenityDetailView(APIView):
     def get(self, request, uuid):
         amenity = self.get_object(uuid)
         if amenity:
-            serializer = AmenitySerializer(amenity)
+            serializer = self.serializer_class(amenity)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         amenity = self.get_object(uuid)
         if amenity:
-            serializer = AmenitySerializer(amenity, data=request.data, partial=True)
+            serializer = self.serializer_class(amenity, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -56,22 +58,24 @@ class AmenityDetailView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 class RoomStandardListView(APIView):
+    serializer_class = RoomStandardSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         room_standards = RoomStandard.objects.all()
-        serializer = RoomStandardSerializer(room_standards, many=True)
+        serializer = self.serializer_class(room_standards, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = RoomStandardSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RoomStandardDetailView(APIView):
+    serializer_class = RoomStandardSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
     
@@ -84,14 +88,14 @@ class RoomStandardDetailView(APIView):
     def get(self, request, uuid):
         room_standard = self.get_object(uuid)
         if room_standard:
-            serializer = RoomStandardSerializer(room_standard)
+            serializer = self.serializer_class(room_standard)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         room_standard = self.get_object(uuid)
         if room_standard:
-            serializer = RoomStandardSerializer(room_standard, data=request.data, partial=True)
+            serializer = self.serializer_class(room_standard, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -106,22 +110,24 @@ class RoomStandardDetailView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
     
 class RoomListView(APIView):
+    serializer_class = RoomSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         rooms = Room.objects.all()
-        serializer = RoomSerializer(rooms, many=True)
+        serializer = self.serializer_class(rooms, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = RoomSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RoomDetailView(APIView):
+    serializer_class = RoomSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
     
@@ -134,14 +140,14 @@ class RoomDetailView(APIView):
     def get(self, request, uuid):
         room = self.get_object(uuid)
         if room:
-            serializer = RoomSerializer(room)
+            serializer = self.serializer_class(room)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         room = self.get_object(uuid)
         if room:
-            serializer = RoomSerializer(room, data=request.data, partial=True)
+            serializer = self.serializer_class(room, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

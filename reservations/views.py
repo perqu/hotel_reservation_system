@@ -2,30 +2,30 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Reservation
-from .serializers import ReservationSerializer
+from .serializers import ReservationSerializer, AvailableRoomsSerializer
 from utils.permissions import HasGroupPermission
-from datetime import datetime
 from rooms.models import Room
-from rest_framework import serializers
 from rooms.serializers import RoomSerializer
 
 class ReservationListView(APIView):
+    serializer_class = ReservationSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         reservations = Reservation.objects.all()
-        serializer = ReservationSerializer(reservations, many=True)
+        serializer = self.serializer_class(reservations, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ReservationSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ReservationDetailView(APIView):
+    serializer_class = ReservationSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
@@ -38,14 +38,14 @@ class ReservationDetailView(APIView):
     def get(self, request, uuid):
         reservation = self.get_object(uuid)
         if reservation:
-            serializer = ReservationSerializer(reservation)
+            serializer = self.serializer_class(reservation)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         reservation = self.get_object(uuid)
         if reservation:
-            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
+            serializer = self.serializer_class(reservation, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -58,22 +58,19 @@ class ReservationDetailView(APIView):
             reservation.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
-
+    
 class AvailableRoomsView(APIView):
+    serializer_class = AvailableRoomsSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
-    class DateParamsSerializer(serializers.Serializer):
-        start_date = serializers.DateField()
-        end_date = serializers.DateField()
+    def post(self, request):
+        available_rooms_serializer = self.serializer_class(data=request.data)
+        if not available_rooms_serializer.is_valid():
+            return Response(available_rooms_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request):
-        date_params_serializer = self.DateParamsSerializer(data=request.query_params)
-        if not date_params_serializer.is_valid():
-            return Response(date_params_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        start_date = date_params_serializer.validated_data['start_date']
-        end_date = date_params_serializer.validated_data['end_date']
+        start_date = available_rooms_serializer.validated_data['start_date']
+        end_date = available_rooms_serializer.validated_data['end_date']
 
         available_rooms = self.get_available_rooms(start_date, end_date)
         return Response({'available_rooms': available_rooms}, status=status.HTTP_200_OK)

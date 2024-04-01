@@ -2,43 +2,52 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Employee
-from .serializers import EmployeeSerializer
+from .serializers import EmployeeSerializer, LoginSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from utils.permissions import HasGroupPermission
 from rest_framework.permissions import AllowAny
 
+
 class LoginAPIView(APIView):
+    serializer_class = LoginSerializer
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data.get('username')
+            password = serializer.validated_data.get('password')
 
-        user = authenticate(username=username, password=password)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
+            user = authenticate(username=username, password=password)
+            if user:
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key})
+            else:
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EmployeeListView(APIView):
+    serializer_class = EmployeeSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get(self, request):
         employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
+        serializer = self.serializer_class(employees, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = EmployeeSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class EmployeeDetailView(APIView):
+    serializer_class = EmployeeSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
@@ -51,14 +60,14 @@ class EmployeeDetailView(APIView):
     def get(self, request, uuid):
         employee = self.get_object(uuid)
         if employee:
-            serializer = EmployeeSerializer(employee)
+            serializer = self.serializer_class(employee)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
         employee = self.get_object(uuid)
         if employee:
-            serializer = EmployeeSerializer(employee, data=request.data, partial=True)
+            serializer = self.serializer_class(employee, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
