@@ -2,23 +2,26 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Employee
-from .serializers import EmployeeSerializer, LoginSerializer
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
+from .serializers import EmployeeSerializer, AuthSerializer
 from utils.permissions import HasGroupPermission
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from utils.paginators import SmallResultsSetPagination
-
-class LoginAPIView(APIView):
+from knox.views import LoginView as KnoxLoginView
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from django.contrib.auth import login
+from utils.scheme import KnoxTokenScheme
+        
+class LoginAPIView(KnoxLoginView):
     """
     A view to handle user authentication and token generation.
     """
-    serializer_class = LoginSerializer
+
+    serializer_class = AuthSerializer
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request, format=None):
         """
         Authenticate user and generate a token.
 
@@ -26,20 +29,13 @@ class LoginAPIView(APIView):
         - username: The username of the user (string).
         - password: The password of the user (string).
         """
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data.get('username')
-            password = serializer.validated_data.get('password')
-
-            user = authenticate(username=username, password=password)
-            if user:
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({'token': token.key})
-            else:
-                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        serializer = AuthTokenSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginAPIView, self).post(request, format=None)
 
 class EmployeeListView(APIView):
     """
@@ -78,13 +74,6 @@ class EmployeeListView(APIView):
         Required parameters in the request:
         - username: The username of the employee (string).
         - email: The email of the employee (string).
-        - position: The position of the employee (string).
-        - department: The department of the employee (string).
-        - hire_date: The hire date of the employee (date, format: YYYY-MM-DD).
-        
-        Optional parameters:
-        - date_of_termination: The date of termination of the employee (date, format: YYYY-MM-DD).
-        - groups: The groups the employee belongs to (list of group UUIDs).
         """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():

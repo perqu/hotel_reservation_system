@@ -1,6 +1,8 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
+from rest_framework.settings import api_settings
 
 load_dotenv()
 
@@ -24,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "knox",
     "drf_spectacular",
     "clients",
     "employees",
@@ -46,12 +49,32 @@ ROOT_URLCONF = "hotel_reservation_system.urls"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'knox.auth.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+REST_KNOX = {
+    'SECURE_HASH_ALGORITHM':'cryptography.hazmat.primitives.hashes.SHA512',
+    'AUTH_TOKEN_CHARACTER_LENGTH': 64, # By default, it is set to 64 characters (this shouldn't need changing).
+    'TOKEN_TTL': timedelta(minutes=45), # The default is 10 hours i.e., timedelta(hours=10)).
+    'USER_SERIALIZER': 'knox.serializers.UserSerializer',
+    'TOKEN_LIMIT_PER_USER': None, # By default, this option is disabled and set to None -- thus no limit.
+    'AUTO_REFRESH': False, # This defines if the token expiry time is extended by TOKEN_TTL each time the token is used.
+    'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
+}
+
+SPECTACULAR_SETTINGS = {
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_COERCE_PATH_PK_SUFFIX": False,
+    "SCHEMA_PATH_PREFIX": r"(/api/admin/)|(/api/)",
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+    },
+    # other than that - only name, description
 }
 
 TEMPLATES = [

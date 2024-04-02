@@ -152,20 +152,6 @@ class AvailableRoomsView(APIView):
         return Response({'available_rooms': available_rooms}, status=status.HTTP_200_OK)
 
     def get_available_rooms(self, start_date, end_date, room_standard):
-        """
-        Retrieve available rooms for a given date range.
-
-        This method queries the database to retrieve available rooms for the specified date range
-        and room standard.
-
-        Args:
-            start_date: The start date of the date range.
-            end_date: The end date of the date range.
-            room_standard: The standard of the room to filter available rooms.
-
-        Returns:
-            A list of available rooms and their details.
-        """
         conflicting_reservations = Reservation.objects.filter(start_date__lte=end_date, end_date__gte=start_date)
 
         all_rooms = Room.objects.all().filter(room_standard = room_standard, is_available=True)

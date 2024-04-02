@@ -7,6 +7,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = ['uuid', 'username', 'email', 'first_name', 'last_name', 'position', 'department', 'hire_date', 'date_of_termination', 'groups']
         read_only_fields = ['uuid', 'groups']
 
-class LoginSerializer(serializers.Serializer):
+class AuthSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
