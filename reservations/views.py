@@ -11,6 +11,9 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 class ReservationListView(APIView):
+    """
+    A view to list all reservations or create a new reservation.
+    """
     serializer_class = ReservationSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
@@ -23,6 +26,12 @@ class ReservationListView(APIView):
         ],
     )
     def get(self, request):
+        """
+        Get a list of paginated reservations.
+
+        Example:
+        http://localhost:8000/reservations?page=2&page_size=20
+        """
         reservations = Reservation.objects.all().order_by('start_date')
 
         paginator = self.pagination_class()
@@ -32,6 +41,15 @@ class ReservationListView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
+        """
+        Create a new reservation.
+
+        Required parameters in the request:
+        - client: The UUID of the client for the reservation (string).
+        - room: The UUID of the room for the reservation (string).
+        - start_date: The start date and time of the reservation (datetime, format: YYYY-MM-DDThh:mm:ss).
+        - end_date: The end date and time of the reservation (datetime, format: YYYY-MM-DDThh:mm:ss).
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -39,17 +57,34 @@ class ReservationListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ReservationDetailView(APIView):
+    """
+    A view to retrieve, update or delete a reservation instance.
+    """
     serializer_class = ReservationSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def get_object(self, uuid):
+        """
+        Retrieve a reservation object by its UUID.
+
+        parameters:
+         - uuid: The UUID of the reservation to retrieve (string).
+
+        return: Reservation object if found, None otherwise.
+        """
         try:
             return Reservation.objects.get(uuid=uuid)
         except Reservation.DoesNotExist:
             return None
 
     def get(self, request, uuid):
+        """
+        Retrieve details of a reservation by UUID.
+
+        Required parameter in the URL:
+        - uuid: The UUID of the reservation to retrieve (string).
+        """
         reservation = self.get_object(uuid)
         if reservation:
             serializer = self.serializer_class(reservation)
@@ -57,6 +92,15 @@ class ReservationDetailView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, uuid):
+        """
+        Update a reservation instance partially.
+
+        Possible parameters in the request:
+        - client: The UUID of the client (string).
+        - room: The UUID of the room (string).
+        - start_date: The start date and time of the reservation (datetime).
+        - end_date: The end date and time of the reservation (datetime).
+        """
         reservation = self.get_object(uuid)
         if reservation:
             serializer = self.serializer_class(reservation, data=request.data, partial=True)
@@ -67,6 +111,12 @@ class ReservationDetailView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, uuid):
+        """
+        Delete a reservation by UUID.
+
+        Required parameter in the URL:
+        - uuid: The UUID of the reservation to delete (string).
+        """
         reservation = self.get_object(uuid)
         if reservation:
             reservation.delete()
@@ -74,11 +124,21 @@ class ReservationDetailView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
     
 class AvailableRoomsView(APIView):
+    """
+    A view to retrieve available rooms for a given date range.
+    """
     serializer_class = AvailableRoomsSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
 
     def post(self, request):
+        """
+        Retrieve available rooms for a given date range.
+
+        Required parameters in the request:
+        - start_date: The start date of the date range (datetime).
+        - end_date: The end date of the date range (datetime).
+        """
         available_rooms_serializer = self.serializer_class(data=request.data)
         if not available_rooms_serializer.is_valid():
             return Response(available_rooms_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -90,6 +150,16 @@ class AvailableRoomsView(APIView):
         return Response({'available_rooms': available_rooms}, status=status.HTTP_200_OK)
 
     def get_available_rooms(self, start_date, end_date):
+        """
+        Retrieve available rooms for a given date range.
+
+        Parameters:
+        - start_date: The start date of the date range (datetime).
+        - end_date: The end date of the date range (datetime).
+
+        Returns:
+        A list of available rooms.
+        """
         conflicting_reservations = Reservation.objects.filter(start_date__lte=end_date, end_date__gte=start_date)
 
         all_rooms = Room.objects.all()
