@@ -9,3 +9,4 @@ class ReservationSerializer(serializers.ModelSerializer):
 class AvailableRoomsSerializer(serializers.Serializer):
     start_date = serializers.DateField()
     end_date = serializers.DateField()
+    room_standard = serializers.UUIDField()

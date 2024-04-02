@@ -138,6 +138,7 @@ class AvailableRoomsView(APIView):
         Required parameters in the request:
         - start_date: The start date of the date range (datetime).
         - end_date: The end date of the date range (datetime).
+        - room_standard: The standard of the room to filter available rooms(UUID).
         """
         available_rooms_serializer = self.serializer_class(data=request.data)
         if not available_rooms_serializer.is_valid():
@@ -145,24 +146,29 @@ class AvailableRoomsView(APIView):
 
         start_date = available_rooms_serializer.validated_data['start_date']
         end_date = available_rooms_serializer.validated_data['end_date']
+        room_standard = available_rooms_serializer.validated_data['room_standard']
 
-        available_rooms = self.get_available_rooms(start_date, end_date)
+        available_rooms = self.get_available_rooms(start_date, end_date, room_standard)
         return Response({'available_rooms': available_rooms}, status=status.HTTP_200_OK)
 
-    def get_available_rooms(self, start_date, end_date):
+    def get_available_rooms(self, start_date, end_date, room_standard):
         """
         Retrieve available rooms for a given date range.
 
-        Parameters:
-        - start_date: The start date of the date range (datetime).
-        - end_date: The end date of the date range (datetime).
+        This method queries the database to retrieve available rooms for the specified date range
+        and room standard.
+
+        Args:
+            start_date: The start date of the date range.
+            end_date: The end date of the date range.
+            room_standard: The standard of the room to filter available rooms.
 
         Returns:
-        A list of available rooms.
+            A list of available rooms and their details.
         """
         conflicting_reservations = Reservation.objects.filter(start_date__lte=end_date, end_date__gte=start_date)
 
-        all_rooms = Room.objects.all()
+        all_rooms = Room.objects.all().filter(room_standard = room_standard, is_available=True)
         occupied_rooms = [reservation.room for reservation in conflicting_reservations]
         available_rooms = [room for room in all_rooms if room not in occupied_rooms]
         room_serializer = RoomSerializer(available_rooms, many=True)
