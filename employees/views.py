@@ -11,13 +11,14 @@ from utils.paginators import SmallResultsSetPagination
 from knox.views import LoginView as KnoxLoginView
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from django.contrib.auth import login
+from utils.throttle import LoginThrottle
+
 from utils.scheme import KnoxTokenScheme
-        
 class LoginAPIView(KnoxLoginView):
     """
     A view to handle user authentication and token generation.
     """
-
+    throttle_classes = [LoginThrottle]
     serializer_class = AuthSerializer
     permission_classes = [AllowAny]
 
