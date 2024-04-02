@@ -6,16 +6,30 @@ from .serializers import ReservationSerializer, AvailableRoomsSerializer
 from utils.permissions import HasGroupPermission
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
+from utils.paginators import SmallResultsSetPagination
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 class ReservationListView(APIView):
     serializer_class = ReservationSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        reservations = Reservation.objects.all()
-        serializer = self.serializer_class(reservations, many=True)
-        return Response(serializer.data)
+        reservations = Reservation.objects.all().order_by('start_date')
+
+        paginator = self.pagination_class()
+        paginated_reservations = paginator.paginate_queryset(reservations, request)
+        
+        serializer = self.serializer_class(paginated_reservations, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

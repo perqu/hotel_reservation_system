@@ -4,16 +4,30 @@ from rest_framework import status
 from .models import Amenity, RoomStandard, Room
 from .serializers import AmenitySerializer, RoomStandardSerializer, RoomSerializer
 from utils.permissions import HasGroupPermission
+from utils.paginators import SmallResultsSetPagination
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 class AmenityListView(APIView):
     serializer_class = AmenitySerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        amenities = Amenity.objects.all()
-        serializer = self.serializer_class(amenities, many=True)
-        return Response(serializer.data)
+        amenities = Amenity.objects.all().order_by('name')
+
+        paginator = self.pagination_class()
+        paginated_amenities = paginator.paginate_queryset(amenities, request)
+
+        serializer = self.serializer_class(paginated_amenities, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -61,11 +75,22 @@ class RoomStandardListView(APIView):
     serializer_class = RoomStandardSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        room_standards = RoomStandard.objects.all()
-        serializer = self.serializer_class(room_standards, many=True)
-        return Response(serializer.data)
+        room_standards = RoomStandard.objects.all().order_by('name')
+
+        paginator = self.pagination_class()
+        paginated_room_standards = paginator.paginate_queryset(room_standards, request)
+
+        serializer = self.serializer_class(paginated_room_standards, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -113,11 +138,22 @@ class RoomListView(APIView):
     serializer_class = RoomSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        rooms = Room.objects.all()
-        serializer = self.serializer_class(rooms, many=True)
-        return Response(serializer.data)
+        rooms = Room.objects.all().order_by('room_number')
+
+        paginator = self.pagination_class()
+        paginated_rooms = paginator.paginate_queryset(rooms, request)
+
+        serializer = self.serializer_class(paginated_rooms, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

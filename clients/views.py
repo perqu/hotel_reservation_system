@@ -4,17 +4,31 @@ from rest_framework import status
 from .models import Client
 from .serializers import ClientSerializer
 from utils.permissions import HasGroupPermission
-
+from utils.paginators import SmallResultsSetPagination
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 class ClientListView(APIView):
+
     serializer_class = ClientSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        clients = Client.objects.all()
-        serializer = self.serializer_class(clients, many=True)
-        return Response(serializer.data)
+        clients = Client.objects.all().order_by('name')
+        
+        paginator = self.pagination_class()
+        paginated_clients = paginator.paginate_queryset(clients, request)
+        
+        serializer = self.serializer_class(paginated_clients, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

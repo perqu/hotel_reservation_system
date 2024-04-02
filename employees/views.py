@@ -7,7 +7,9 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from utils.permissions import HasGroupPermission
 from rest_framework.permissions import AllowAny
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from utils.paginators import SmallResultsSetPagination
 
 class LoginAPIView(APIView):
     serializer_class = LoginSerializer
@@ -33,11 +35,22 @@ class EmployeeListView(APIView):
     serializer_class = EmployeeSerializer
     permission_classes = [HasGroupPermission]
     required_groups = ['IT']
+    pagination_class = SmallResultsSetPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="page_size", type=OpenApiTypes.INT, description='Page Size for pagination.', required=False),
+            OpenApiParameter(name="page", type=OpenApiTypes.INT, description='Page number for pagination.', required=False),
+        ],
+    )
     def get(self, request):
-        employees = Employee.objects.all()
-        serializer = self.serializer_class(employees, many=True)
-        return Response(serializer.data)
+        employees = Employee.objects.all().order_by('username')
+
+        paginator = self.pagination_class()
+        paginated_employees = paginator.paginate_queryset(employees, request)
+
+        serializer = self.serializer_class(paginated_employees, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
